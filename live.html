@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a237e;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+
+        .status.offline {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status.online {
+            background: #28a745;
+            color: white;
+        }
+
+        .status.connecting {
+            background: #ffc107;
+            color: black;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            padding: 2rem;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .player-section {
+            flex: 2;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .player-container {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .player-container video {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Estilo personalizado para mensagem de erro */
+        .clappr-error,
+        .clappr-error-screen,
+        .clappr-error-screen .error-screen {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('./img-capa.jpg') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: white !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            font-size: 1.5rem !important;
+            font-weight: bold !important;
+            text-align: center !important;
+        }
+
+        .clappr-error .error-message,
+        .clappr-error-screen .error-message,
+        .clappr-error-screen .error-screen .error-message {
+            background: rgba(0, 0, 0, 0.8) !important;
+            padding: 2rem !important;
+            border-radius: 10px !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .sidebar {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            color: white;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .segment-list {
+            list-style: none;
+        }
+
+        .segment-item {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            border-radius: 8px;
+            color: white;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .segment-item.current {
+            border-left-color: #28a745;
+            background: rgba(40, 167, 69, 0.2);
+        }
+
+        .segment-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .segment-time {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .segment-duration {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        .controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .info-panel {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .info-panel h4 {
+            margin-bottom: 0.5rem;
+            color: #ffc107;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.25rem 0;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Esconde a barra de tempo e o tempo do Video.js SEMPRE */
+        .vjs-progress-control,
+        .vjs-current-time,
+        .vjs-duration,
+        .vjs-time-divider {
+            display: none !important;
+        }
+        /* Badge AO VIVO sempre visível */
+        .live-badge {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: #e53935;
+            color: #fff;
+            font-weight: bold;
+            padding: 0.3em 1em;
+            border-radius: 20px;
+            font-size: 1rem;
+            z-index: 10;
+            box-shadow: 0 2px 8px #0004;
+            letter-spacing: 2px;
+            display: inline-block;
+        }
+        .simple-player-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="simple-player-container" style="position: relative;">
+        <video id="videojs-player" class="video-js vjs-default-skin" controls preload="auto" width="720" height="405" data-setup='{}'></video>
+        <img id="offline-overlay" src="img-capa.jpg" alt="Offline" style="position: absolute; top: 0; left: 0; width: 720px; height: 405px; object-fit: cover; z-index: 10; display: none; pointer-events: none;" />
+    </div>
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            window.player = videojs('videojs-player', {
+                liveui: true,
+                fluid: false,
+                muted: true,
+                controls: true,
+                preload: 'auto',
+                techOrder: ['html5'],
+                html5: {
+                    vhs: { overrideNative: true },
+                    nativeVideoTracks: false
+                }
+            });
+            
+            // Configurar fonte do stream HLS
+            window.player.src({ src: 'http://localhost:8888/live/main_stream.m3u8', type: 'application/x-mpegURL' });
+
+            // Adiciona overlay de imagem dentro do player (assume offline ao carregar)
+            addOverlay();
+
+            // Handler de erro do player
+            window.player.on('error', function() {
+                const errDiv = document.getElementById('player-error');
+                if (errDiv) errDiv.style.display = 'block';
+            });
+        });
+
+        function addOverlay() {
+            if (!document.getElementById('vjs-img-overlay')) {
+                const overlay = document.createElement('img');
+                overlay.id = 'vjs-img-overlay';
+                overlay.src = 'img.jpg';
+                overlay.alt = 'Offline';
+                overlay.style.position = 'absolute';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.objectFit = 'cover';
+                overlay.style.zIndex = '20';
+                overlay.style.pointerEvents = 'none';
+                overlay.style.filter = 'brightness(0.75)';
+                // Adiciona dentro do player
+                const playerEl = document.querySelector('.video-js');
+                if (playerEl) playerEl.appendChild(overlay);
+
+                // Adiciona badge OFFLINE
+                if (!document.getElementById('vjs-offline-badge')) {
+                    const badge = document.createElement('div');
+                    badge.id = 'vjs-offline-badge';
+                    badge.textContent = 'OFFLINE';
+                    badge.style.position = 'absolute';
+                    badge.style.top = '24px';
+                    badge.style.right = '32px';
+                    badge.style.background = 'none';
+                    badge.style.color = '#fff';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.fontSize = '24px';
+                    badge.style.zIndex = '30';
+                    badge.style.pointerEvents = 'none';
+                    badge.style.letterSpacing = '2px';
+                    badge.style.textShadow = '1px 1px 4px #0008';
+                    if (playerEl) playerEl.appendChild(badge);
+                }
+            }
+        }
+        function removeOverlay() {
+            const overlay = document.getElementById('vjs-img-overlay');
+            if (overlay) overlay.remove();
+            const badge = document.getElementById('vjs-offline-badge');
+            if (badge) badge.remove();
+            // Esconde mensagem de erro ao tentar novamente
+            const errDiv = document.getElementById('player-error');
+            if (errDiv) errDiv.style.display = 'none';
+                }
+    </script>
+    <script>
+    // WebSocket para status da live
+    const ws = new WebSocket('ws://localhost:8082');
+    ws.onopen = () => {
+      console.log('Conectado ao watcher WebSocket!');
+    };
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.status === 'online') {
+        console.log('LIVE ONLINE');
+        removeOverlay();
+        if (window.player) {
+          window.player.src({ src: 'http://localhost:8888/live/main_stream.m3u8', type: 'application/x-mpegURL' });
+          window.player.muted(true);
+          window.player.play().catch(e => {
+            console.log('Autoplay bloqueado pelo navegador:', e);
+          });
+        }
+      } else if (data.status === 'offline') {
+        console.log('LIVE OFFLINE');
+        addOverlay();
+        if (window.player) {
+          window.player.pause();
+        }
+      }
+    };
+    </script>
+</body>
+</html> 
